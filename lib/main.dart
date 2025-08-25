@@ -9,7 +9,10 @@ const List<Widget> components = [
     Icons.home,
     size: 40,
     color: Colors.red,
-  )
+  ),
+  MyGrid(),
+  MyFlexHor(),
+  MyFlexVer()
 ];
 
 void main() {
@@ -51,7 +54,9 @@ void main() {
       body: ListView.builder(
         itemCount: components.length,
         itemBuilder: (BuildContext context, int index) {
-          return components[index];
+          return Center(
+            child: components[index],
+          );
         },
       ),
     ),
@@ -170,6 +175,101 @@ class MyImg extends StatelessWidget {
       //     fit: BoxFit.fill,
       //   ),
       // ),
+    );
+  }
+}
+
+class MyGrid extends StatelessWidget {
+  const MyGrid({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.builder(
+      // 一定要加这个 因为外部容器是滚动 GridView也默认滚动 因此会冲突 设置shrinkWrap使GridView只占用其内容所需的空间
+      shrinkWrap: true,
+      // GridView虽然不再试图占满空间 但是依然默认滚动 父容器在滑动到GridView时无法触发自身滚动 因此要禁用自身滚动
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisSpacing: 6,
+        crossAxisSpacing: 6,
+        // mainAxisExtent: 30, // 直接设置固定高度
+        childAspectRatio: 2, // 宽/高 比例 自适应友好
+      ),
+      padding: const EdgeInsets.all(6),
+      itemCount: 3,
+      itemBuilder: (BuildContext context, int index) {
+        return Container(
+          alignment: Alignment.center,
+          decoration: const BoxDecoration(color: Colors.red),
+          child: Text(
+            '$index',
+            style: const TextStyle(color: Colors.white, fontSize: 20),
+          ),
+        );
+      },
+    );
+  }
+}
+
+// Flex是Row Column的基类
+class MyFlexHor extends StatelessWidget {
+  const MyFlexHor({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 100,
+      decoration:
+          BoxDecoration(border: Border.all(width: 2, color: Colors.yellow)),
+      child: Flex(
+        direction: Axis.horizontal,
+        children: [
+          Expanded(
+            flex: 1,
+            child: Container(
+              decoration: const BoxDecoration(color: Colors.red),
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Container(
+              decoration: const BoxDecoration(color: Colors.blueAccent),
+            ),
+          )
+        ],
+      ),
+    );
+  }
+}
+
+class MyFlexVer extends StatelessWidget {
+  const MyFlexVer({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      // width: 100, // 不设宽度就是默认拉满
+      height: 200,
+      decoration:
+          BoxDecoration(border: Border.all(width: 2, color: Colors.yellow)),
+      child: Flex(
+        direction: Axis.vertical,
+        children: [
+          Expanded(
+            flex: 1,
+            child: Container(
+              decoration: const BoxDecoration(color: Colors.red),
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Container(
+              decoration: const BoxDecoration(color: Colors.blueAccent),
+            ),
+          )
+        ],
+      ),
     );
   }
 }
