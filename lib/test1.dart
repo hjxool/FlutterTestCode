@@ -12,7 +12,10 @@ const List<Widget> components = [
   ),
   MyGrid(),
   MyFlexHor(),
-  MyFlexVer()
+  MyFlexVer(),
+  MyStack(),
+  MyButtons(),
+  MyAddNum()
 ];
 
 void main() {
@@ -268,6 +271,122 @@ class MyFlexVer extends StatelessWidget {
               decoration: const BoxDecoration(color: Colors.blueAccent),
             ),
           )
+        ],
+      ),
+    );
+  }
+}
+
+class MyStack extends StatelessWidget {
+  const MyStack({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+        width: 200,
+        height: 300,
+        decoration:
+            BoxDecoration(border: Border.all(width: 6, color: Colors.yellow)),
+        child: Column(
+          children: [
+            Container(
+              width: 200,
+              height: 40,
+              decoration: const BoxDecoration(color: Colors.black),
+              child: const Text(
+                '顶部固定',
+                style: TextStyle(color: Colors.white, fontSize: 16),
+              ),
+            ),
+            Expanded(
+              flex: 1,
+              child: ListView.builder(
+                itemCount: 10,
+                itemBuilder: (BuildContext context, int index) {
+                  return Column(
+                    children: [
+                      Text(
+                        'Text${index + 1}',
+                        style: const TextStyle(fontSize: 20),
+                      ),
+                      const SizedBox(
+                        height: 20,
+                      )
+                    ],
+                  );
+                },
+              ),
+            )
+          ],
+        ));
+  }
+}
+
+class MyButtons extends StatelessWidget {
+  const MyButtons({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.all(10),
+      child: Wrap(
+        children: [
+          const ElevatedButton(onPressed: null, child: Text('凸起按钮')),
+          ElevatedButton.icon(
+              onPressed: null,
+              icon: const Icon(Icons.send),
+              label: const Text('凸起按钮加图标')),
+          const TextButton(onPressed: null, child: Text('文本按钮')),
+          TextButton.icon(
+              onPressed: null,
+              icon: const Icon(Icons.add),
+              label: const Text('文本按钮加图标')),
+          const OutlinedButton(onPressed: null, child: Text('边框按钮')),
+          const IconButton(onPressed: null, icon: Icon(Icons.home))
+        ],
+      ),
+    );
+  }
+}
+
+class MyAddNum extends StatefulWidget {
+  const MyAddNum({super.key});
+
+  @override
+  State<MyAddNum> createState() => _MyAddNumState();
+}
+
+class _MyAddNumState extends State<MyAddNum> {
+  int _num = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.all(10),
+      decoration:
+          BoxDecoration(border: Border.all(width: 2, color: Colors.red)),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            '$_num',
+            style: const TextStyle(fontSize: 20),
+          ),
+          ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  _num++;
+                });
+              },
+              style: ElevatedButton.styleFrom(
+                shape: const CircleBorder(),
+                backgroundColor: Colors.blue,
+              ),
+              child: const Icon(
+                Icons.add,
+                color: Colors.white,
+                size: 24,
+              ))
         ],
       ),
     );
