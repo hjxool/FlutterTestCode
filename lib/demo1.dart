@@ -39,11 +39,12 @@ class MyAppState extends ChangeNotifier {
   // List<WordPair> favorites = [];
   Set<WordPair> favorites = {};
 
-  void toggleFavorite() {
-    if (favorites.contains(current)) {
-      favorites.remove(current);
+  void toggleFavorite({WordPair? word}) {
+    WordPair w = word ?? current;
+    if (favorites.contains(w)) {
+      favorites.remove(w);
     } else {
-      favorites.add(current);
+      favorites.add(w);
     }
     notifyListeners();
   }
@@ -59,7 +60,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   int _selectedIndex = 0;
   // 根据所选导航项 切换页面内容
-  final List<Widget> _pages = const [GeneratorPage(), Placeholder()];
+  final List<Widget> _pages = const [GeneratorPage(), FavoritesPage()];
   // 点击切换导航项
   void _changeSelected(int index) {
     setState(() {
@@ -71,10 +72,18 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     // 获取屏幕方向
     final Orientation orientation = MediaQuery.of(context).orientation;
+    var mainArea = Container(
+      color: Theme.of(context).colorScheme.primaryContainer,
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 500),
+        child: _pages[_selectedIndex],
+      ),
+    );
+
     if (orientation == Orientation.portrait) {
       // 竖屏
       return Scaffold(
-        body: _pages[_selectedIndex],
+        body: mainArea,
         // 竖屏时 使用脚手架内置的底部导航栏
         bottomNavigationBar: BottomNavigationBar(
           items: const [
@@ -93,33 +102,40 @@ class _MyHomePageState extends State<MyHomePage> {
       );
     } else {
       // 横屏
-      return Scaffold(
-        // 不同系统下可能有一些系统操作条 会遮挡页面 因此用SafeArea添加内边距避免
-        body: SafeArea(
-          // 侧边栏没有内置配置项
-          child: Row(
-            children: [
-              NavigationRail(
-                destinations: const [
-                  NavigationRailDestination(
-                    icon: Icon(Icons.home),
-                    label: Text('Home'),
+      // 也可以直接用LayoutBuilder获取屏幕宽度 来决定页面布局
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          return Scaffold(
+            // 不同系统下可能有一些系统操作条 会遮挡页面 因此用SafeArea添加内边距避免
+            body: SafeArea(
+              // 侧边栏没有内置配置项
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 200,
+                    // NavigationRail侧边栏无法直接设置宽度 需要包裹在容器中限制宽度
+                    child: NavigationRail(
+                      destinations: const [
+                        NavigationRailDestination(
+                          icon: Icon(Icons.home),
+                          label: Text('Home'),
+                        ),
+                        NavigationRailDestination(
+                          icon: Icon(Icons.favorite),
+                          label: Text('Favorites'),
+                        ),
+                      ],
+                      selectedIndex: _selectedIndex,
+                      onDestinationSelected: _changeSelected,
+                      extended: constraints.maxWidth >= 600, // 横屏时展开
+                    ),
                   ),
-                  NavigationRailDestination(
-                    icon: Icon(Icons.favorite),
-                    label: Text('Favorites'),
-                  ),
+                  Expanded(child: mainArea)
                 ],
-                selectedIndex: _selectedIndex,
-                onDestinationSelected: _changeSelected,
-                extended: true, // 横屏时展开
               ),
-              Expanded(
-                child: _pages[_selectedIndex],
-              )
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       );
     }
   }
@@ -133,36 +149,33 @@ class GeneratorPage extends StatelessWidget {
     // 为了调用修改状态数据的方法 需要获取appState
     MyAppState appState = context.read<MyAppState>();
 
-    return Container(
-      color: Theme.of(context).colorScheme.primaryContainer, // 主页应用主题配色
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text('随机单词：'),
-            const SizedBox(
-              height: 10,
-            ),
-            const BigCard(),
-            const SizedBox(
-              height: 10,
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              // mainAxisSize: MainAxisSize.min,
-              children: [
-                const FavoriteButton(),
-                const SizedBox(
-                  width: 10,
-                ),
-                ElevatedButton(
-                  onPressed: () => appState.getNewWord(),
-                  child: const Text('下一个'),
-                ),
-              ],
-            )
-          ],
-        ),
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Text('随机单词：'),
+          const SizedBox(
+            height: 10,
+          ),
+          const BigCard(),
+          const SizedBox(
+            height: 10,
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            // mainAxisSize: MainAxisSize.min,
+            children: [
+              const FavoriteButton(),
+              const SizedBox(
+                width: 10,
+              ),
+              ElevatedButton(
+                onPressed: () => appState.getNewWord(),
+                child: const Text('下一个'),
+              ),
+            ],
+          )
+        ],
       ),
     );
     // 或者 用Consumer监听范围限制在builder方法中 只重建一小部分 widget 树而不是整个 build 方法
@@ -218,6 +231,39 @@ class BigCard extends StatelessWidget {
           style: style,
         ),
       ),
+    );
+  }
+}
+
+class FavoritesPage extends StatelessWidget {
+  const FavoritesPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    MyAppState appState = context.read<MyAppState>();
+    List<WordPair> wordList = appState.favorites.toList();
+    // 为了响应式更新需要监听对应列表变化
+    final int itemCount = context
+        .select<MyAppState, int>((value) => value.favorites.toList().length);
+
+    return ListView.builder(
+      itemCount: itemCount,
+      itemBuilder: (BuildContext context, int index) {
+        return Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: ListTile(
+            leading: IconButton(
+              onPressed: () => appState.toggleFavorite(word: wordList[index]),
+              icon: const Icon(Icons.favorite),
+              color: Colors.red,
+            ),
+            title: Text(
+              '${wordList[index]}',
+              style: const TextStyle(fontSize: 16),
+            ),
+          ),
+        );
+      },
     );
   }
 }
