@@ -19,10 +19,97 @@ const List<Widget> components = [
 ];
 
 void main() {
-  runApp(MaterialApp(
-    home: Scaffold(
-      appBar:
-          AppBar(title: const Text('Hello123'), backgroundColor: Colors.yellow),
+  runApp(const MaterialApp(
+    // 要用顶部导航栏必须用DefaultTabController包裹 作为TabBar TabBarView的共同父组件才可以
+    home: MainApp(),
+  ));
+}
+
+class MainApp extends StatefulWidget {
+  const MainApp({super.key});
+
+  @override
+  State<MainApp> createState() => _MainAppState();
+}
+
+class _MainAppState extends State<MainApp> {
+  int _currentPageIndex = 0;
+  final List<Widget> _pages = const [TestPage1(), TestPage2()];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      // IndexedStack 缓存页面状态 切换可见的子组件
+      // body: IndexedStack(
+      //   index: _currentPageIndex,
+      //   children: _pages,
+      // ),
+      body: _pages[_currentPageIndex],
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentPageIndex,
+        onTap: (index) {
+          setState(() {
+            _currentPageIndex = index;
+          });
+        },
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: '测试页1'),
+          BottomNavigationBarItem(icon: Icon(Icons.list), label: '测试页2'),
+        ],
+      ),
+    );
+  }
+}
+
+class TestPage1 extends StatefulWidget {
+  const TestPage1({super.key});
+
+  @override
+  State<TestPage1> createState() => _TestPage1State();
+}
+
+class _TestPage1State extends State<TestPage1> with TickerProviderStateMixin {
+  // late 延迟初始化 告诉编译器这个变量在声明时不会立即被赋值 但会在第一次使用时被赋值
+  late final TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    print('测试是否重新加载了测试页1');
+    // 要使用this 必须用with关键字 混入 TickerProviderStateMixin 才能得到这个能力
+    _tabController =
+        TabController(length: 3, vsync: this); // 表示使用当前state实例作为 动画节拍器vsync
+    // Tab切换过程监听事件
+    _tabController.addListener(() {
+      // 因为index索引变化并不是直接从0到1 而是浮点型过渡来控制动画 因此在过程中会一直触发
+      // 所以要加判断等完全切换后在触发
+      if (!_tabController.indexIsChanging) {
+        print('Tab切换完毕：${_tabController.index}');
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose(); // 组件销毁前注销
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Hello123'),
+        backgroundColor: Colors.yellow,
+        bottom: TabBar(
+          controller: _tabController, // 表示TabBar的行为和状态都由_tabController对象来控制
+          tabs: const [
+            Tab(text: '主页'),
+            Tab(text: '喜欢'),
+            Tab(text: '设置'),
+          ],
+        ),
+      ),
       // body: const Column(
       //   children: [MyApp(), MyButton(), MyText(), MyImg()],
       // )),
@@ -54,16 +141,34 @@ void main() {
       //     )
       //   ],
       // ),
-      body: ListView.builder(
-        itemCount: components.length,
-        itemBuilder: (BuildContext context, int index) {
-          return Center(
-            child: components[index],
-          );
-        },
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          ListView.builder(
+            itemCount: components.length,
+            itemBuilder: (BuildContext context, int index) {
+              return Center(
+                child: components[index],
+              );
+            },
+          ),
+          const Center(child: Text('喜欢内容')),
+          const Center(child: Text('设置内容')),
+        ],
       ),
-    ),
-  ));
+    );
+  }
+}
+
+class TestPage2 extends StatelessWidget {
+  const TestPage2({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: Text('测试页2'),
+    );
+  }
 }
 
 class MyApp extends StatelessWidget {
